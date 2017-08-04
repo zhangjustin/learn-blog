@@ -54,6 +54,22 @@ class User(UserMixin, db.Model):
     def __repr__(self):
         return '<User %r>' %self.username
 
+    def generate_reset_token(self, expiration=3600):
+        s = Serializer(current_app.config['SECRET_KEY'], expiration)
+        return s.dumps({'reset': self.id})
+    
+    def reset_password(self, token, new_password):
+        s = Seralizer(current_app.config['SECRET_KEY'])
+        try:
+            data = s.loads(token)
+        except:
+            return False
+        if data.get('reset') != self.id:
+            return False
+        self.password = new_password
+        db.session.add(self)
+        return True
+
 
 @login_manager.user_loader
 def load_user(user_id):
